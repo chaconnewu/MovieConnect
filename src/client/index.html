@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.0.1/semantic.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.0.1/semantic.min.js"></script>
+
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox.js/v2.2.1/mapbox.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox.js/v2.2.1/mapbox.css' rel='stylesheet' />
+    <script src='https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/leaflet.markercluster.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/MarkerCluster.css' rel='stylesheet' />
+    <link href='https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/MarkerCluster.Default.css' rel='stylesheet' />
+    <style>
+      body { margin:0; padding:0; }
+      #map { width:60%; height:50%; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id='map'></div>
+    <script type="text/javascript" src="bundle.js" charset="utf-8">
+    </script>
+    <script>
+    L.mapbox.accessToken = 'pk.eyJ1IjoiY2hhY29ubmV3dSIsImEiOiI4NjNkZWRkZmQ1MTk2NmIwMjQ2YWEwYzE0ZjJkODFjNCJ9.kpgKT1D3pk_v-q52rS4t7g';
+    var geojson = [
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-122.5, 37.74]
+        },
+        "properties": {
+          "title": "Mapbox DC",
+          "description": "1714 14th St NW, Washington DC",
+          "marker-color": "#fc4353",
+          "marker-size": "small",
+          "marker-symbol": "monument"
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-122.414, 37.776]
+        },
+        "properties": {
+          "title": "Mapbox SF",
+          "description": "155 9th St, San Francisco",
+          "marker-color": "#fc4353",
+          "marker-size": "small",
+          "marker-symbol": "harbor"
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-122.414, 37.777]
+        },
+        "properties": {
+          "title": "Mapbox SF",
+          "description": "155 9th St, San Francisco",
+          "marker-color": "#fc4353",
+          "marker-size": "small",
+          "marker-symbol": "harbor"
+        }
+      },
+    ];
+
+    var markers = L.markerClusterGroup();
+
+    L.mapbox.map('map', 'mapbox.pirates')
+      .setView([37.77,-122.43], 12);
+    </script>
+  </body>
+</html>
