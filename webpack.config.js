@@ -1,7 +1,7 @@
 module.exports = {
   entry: './src/client/app.js',
   output: {
-    filename: 'src/client/bundle.js'
+    filename: 'src/client/lib/bundle.js'
   },
   module: {
     loaders: [

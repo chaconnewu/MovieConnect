@@ -5,7 +5,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.0.1/semantic.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.0.1/semantic.min.js"></script>
-
+    <link href="lib/nouislider.min.css" rel="stylesheet">
+    <script src="lib/nouislider.min.js"></script>
     <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
     <script src='https://api.tiles.mapbox.com/mapbox.js/v2.2.1/mapbox.js'></script>
     <link href='https://api.tiles.mapbox.com/mapbox.js/v2.2.1/mapbox.css' rel='stylesheet' />
@@ -19,10 +20,40 @@
   </head>
   <body>
     <div id="app"></div>
-    <div id='map'></div>
-    <script type="text/javascript" src="bundle.js" charset="utf-8">
+    <h2 class="ui header">
+      From <span id="startYear"></span> to
+      <span id="endYear"></span>
+    </h2>
+    <div id="range" style="margin:60px;width:60%"></div>
+    <div id="map" style="margin:60px"></div>
+    <script type="text/javascript" src="lib/bundle.js" charset="utf-8">
     </script>
+
     <script>
+    var slider = document.getElementById('range');
+
+    noUiSlider.create(slider, {
+    	start: [ 1915, 2015 ], // Handle start position
+    	step: 1,
+    	limit: 100,
+    	connect: true, // Display a colored bar between the handles
+    	orientation: 'horizontal',
+    	behaviour: 'tap-drag', // Move handle on tap, bar is draggable
+    	range: {
+    		'min': 1915,
+    		'max': 2015
+    	},
+    	pips: { // Show a scale with the slider
+    		mode: 'range',
+    		density: 10
+    	}
+    });
+    slider.noUiSlider.on('update', function() {
+      var range = slider.noUiSlider.get();
+      $('#startYear').html(parseInt(range[0], 10));
+      $('#endYear').html(parseInt(range[1], 10));;
+    });
+
     L.mapbox.accessToken = 'pk.eyJ1IjoiY2hhY29ubmV3dSIsImEiOiI4NjNkZWRkZmQ1MTk2NmIwMjQ2YWEwYzE0ZjJkODFjNCJ9.kpgKT1D3pk_v-q52rS4t7g';
     $.getJSON('fl_geo.json').done(function(geojson) {
       var markers = L.markerClusterGroup();
