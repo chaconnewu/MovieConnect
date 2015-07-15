@@ -24,55 +24,24 @@
     </script>
     <script>
     L.mapbox.accessToken = 'pk.eyJ1IjoiY2hhY29ubmV3dSIsImEiOiI4NjNkZWRkZmQ1MTk2NmIwMjQ2YWEwYzE0ZjJkODFjNCJ9.kpgKT1D3pk_v-q52rS4t7g';
-    var geojson = [
-      {
-        "type": "Feature",
-        "geometry": {
-          "type": "Point",
-          "coordinates": [-122.5, 37.74]
-        },
-        "properties": {
-          "title": "Mapbox DC",
-          "description": "1714 14th St NW, Washington DC",
-          "marker-color": "#fc4353",
-          "marker-size": "small",
-          "marker-symbol": "monument"
-        }
-      },
-      {
-        "type": "Feature",
-        "geometry": {
-          "type": "Point",
-          "coordinates": [-122.414, 37.776]
-        },
-        "properties": {
-          "title": "Mapbox SF",
-          "description": "155 9th St, San Francisco",
-          "marker-color": "#fc4353",
-          "marker-size": "small",
-          "marker-symbol": "harbor"
-        }
-      },
-      {
-        "type": "Feature",
-        "geometry": {
-          "type": "Point",
-          "coordinates": [-122.414, 37.777]
-        },
-        "properties": {
-          "title": "Mapbox SF",
-          "description": "155 9th St, San Francisco",
-          "marker-color": "#fc4353",
-          "marker-size": "small",
-          "marker-symbol": "harbor"
-        }
-      },
-    ];
+    $.getJSON('fl_geo.json').done(function(geojson) {
+      var markers = L.markerClusterGroup();
+      geojson = geojson.map(function(item) {
+        item['properties'] = {
+          'marker-color' : '#3bb2d0',
+          'marker-size' : 'small'
+        };
+        return item;
+      });
+      var mapGeo = L.mapbox.map('map', 'mapbox.pirates')
+        .setView([37.77,-122.43], 11);
 
-    var markers = L.markerClusterGroup();
+      var geoJSONLayer = L.geoJson(geojson);
+      var markers = new L.MarkerClusterGroup();
+      markers.addLayer(geoJSONLayer);
+      mapGeo.addLayer(markers);
+    });
 
-    L.mapbox.map('map', 'mapbox.pirates')
-      .setView([37.77,-122.43], 12);
     </script>
   </body>
 </html>

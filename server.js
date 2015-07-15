@@ -12,5 +12,8 @@ app.get('/', function(req, res) {
 app.get('bundle.js', function(req, res) {
   res.sendFile(path.join(__dirname + CLIENT_DIR + '/bundle.js'));
 });
+app.get('fl_geo.json', function(req, res) {
+  res.sendFile(path.join(__dirname + CLIENT_DIR + '/fl_geo.json'));
+});
 app.listen(port);
 console.log('The magic happens on port ' + port);
