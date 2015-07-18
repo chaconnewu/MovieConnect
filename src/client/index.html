@@ -5,6 +5,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.0.1/semantic.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.0.1/semantic.min.js"></script>
+
     <link href="lib/nouislider.min.css" rel="stylesheet">
     <script src="lib/nouislider.min.js"></script>
     <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
@@ -13,66 +14,138 @@
     <script src='https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/leaflet.markercluster.js'></script>
     <link href='https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/MarkerCluster.css' rel='stylesheet' />
     <link href='https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/MarkerCluster.Default.css' rel='stylesheet' />
-    <style>
-      body { margin:0; padding:0; }
-      #map { width:60%; height:50%; }
-    </style>
   </head>
   <body>
     <div id="app"></div>
-    <h2 class="ui header">
-      From <span id="startYear"></span> to
-      <span id="endYear"></span>
-    </h2>
-    <div id="range" style="margin:60px;width:60%"></div>
-    <div id="map" style="margin:60px"></div>
     <script type="text/javascript" src="lib/bundle.js" charset="utf-8">
     </script>
 
     <script>
-    var slider = document.getElementById('range');
+    // L.mapbox.accessToken = 'pk.eyJ1IjoiY2hhY29ubmV3dSIsImEiOiI4NjNkZWRkZmQ1MTk2NmIwMjQ2YWEwYzE0ZjJkODFjNCJ9.kpgKT1D3pk_v-q52rS4t7g';
+    // var mapGeo = L.mapbox.map('map', 'mapbox.pirates')
+    //   .setView([37.77,-122.43], 11);
+    // var geoJson;
+    // var movieGeoJSON;
 
-    noUiSlider.create(slider, {
-    	start: [ 1915, 2015 ], // Handle start position
-    	step: 1,
-    	limit: 100,
-    	connect: true, // Display a colored bar between the handles
-    	orientation: 'horizontal',
-    	behaviour: 'tap-drag', // Move handle on tap, bar is draggable
-    	range: {
-    		'min': 1915,
-    		'max': 2015
-    	},
-    	pips: { // Show a scale with the slider
-    		mode: 'range',
-    		density: 10
-    	}
-    });
-    slider.noUiSlider.on('update', function() {
-      var range = slider.noUiSlider.get();
-      $('#startYear').html(parseInt(range[0], 10));
-      $('#endYear').html(parseInt(range[1], 10));;
-    });
+    // var slider = document.getElementById('range');
+    //
+    // noUiSlider.create(slider, {
+    // 	start: [ 1915, 2015 ], // Handle start position
+    // 	step: 1,
+    // 	limit: 100,
+    // 	connect: true, // Display a colored bar between the handles
+    // 	orientation: 'horizontal',
+    // 	behaviour: 'tap-drag', // Move handle on tap, bar is draggable
+    // 	range: {
+    // 		'min': 1915,
+    // 		'max': 2015
+    // 	},
+    // 	pips: { // Show a scale with the slider
+    // 		mode: 'range',
+    // 		density: 10
+    // 	}
+    // });
+    // slider.noUiSlider.on('change', function() {
+    //   _.debounce(function(){
+    //     var range = slider.noUiSlider.get();
+    //     var startYear = parseInt(range[0], 10);
+    //     var endYear = parseInt(range[1], 10);
+    //     $('#startYear').html(startYear);
+    //     $('#endYear').html(endYear);
+    //     if(mapGeo !== undefined && geoJson.length > 0) {
+    //       mapGeo.eachLayer(function(layer) {
+    //         if (layer instanceof L.Marker) {
+    //           mapGeo.removeLayer(layer);
+    //         }
+    //       });
+    //     }
+    //     var cache = {};
+    //     geoJson = [];
+    //     movieGeoJSON.forEach(function(movie) {
+    //       if (movie.year > endYear || movie.year < startYear) {
+    //         return;
+    //       }
+    //       for (var i = 0; i < movie.locations.length; i++) {
+    //         if (movie.locations[i]['real address'] in cache) {
+    //           continue;
+    //         }
+    //         var geoObj = {
+    //           'type': 'Feature',
+    //           'geometry': {
+    //             'type': 'Point',
+    //             'coordinates': [movie.locations[i]['lng'], movie.locations[i]['lat']],
+    //           },
+    //           'properties': {
+    //             'marker-color' : '#3bb2d0',
+    //             'marker-size' : 'small'
+    //           }
+    //         };
+    //         geoJson.push(geoObj);
+    //         cache[movie.locations[i]['real address']] = 1;
+    //       }
+    //     });
+    //     console.log(geoJson.length);
+    //     var markers = L.markerClusterGroup();
+    //
+    //
+    //     var geoJSONLayer = L.geoJson(geoJson);
+    //     var markers = new L.MarkerClusterGroup();
+    //     markers.addLayer(geoJSONLayer);
+    //     mapGeo.addLayer(markers);
+    //   }, 500)();
+    //
+    // });
 
-    L.mapbox.accessToken = 'pk.eyJ1IjoiY2hhY29ubmV3dSIsImEiOiI4NjNkZWRkZmQ1MTk2NmIwMjQ2YWEwYzE0ZjJkODFjNCJ9.kpgKT1D3pk_v-q52rS4t7g';
-    $.getJSON('fl_geo.json').done(function(geojson) {
-      var markers = L.markerClusterGroup();
-      geojson = geojson.map(function(item) {
-        item['properties'] = {
-          'marker-color' : '#3bb2d0',
-          'marker-size' : 'small'
-        };
-        return item;
-      });
-      var mapGeo = L.mapbox.map('map', 'mapbox.pirates')
-        .setView([37.77,-122.43], 11);
+    // $.getJSON('fl_geo.json').done(function(geojson) {
+    //
+    //   geojson = geojson.map(function(item) {
+    //     item['properties'] = {
+    //       'marker-color' : '#3bb2d0',
+    //       'marker-size' : 'small'
+    //     };
+    //     return item;
+    //   });
+    //   var markers = L.markerClusterGroup();
+    //   var mapGeo = L.mapbox.map('map', 'mapbox.pirates')
+    //     .setView([37.77,-122.43], 11);
+    //
+    //   var geoJSONLayer = L.geoJson(geojson);
+    //   var markers = new L.MarkerClusterGroup();
+    //   markers.addLayer(geoJSONLayer);
+    //   mapGeo.addLayer(markers);
+    // });
 
-      var geoJSONLayer = L.geoJson(geojson);
-      var markers = new L.MarkerClusterGroup();
-      markers.addLayer(geoJSONLayer);
-      mapGeo.addLayer(markers);
-    });
-
+    // $.getJSON('movie_geo_data.json').done(function(movieData){
+    //   var cache = {};
+    //   geoJson = [];
+    //   movieGeoJSON = movieData;
+    //   movieGeoJSON.forEach(function(movie) {
+    //     for (var i = 0; i < movie.locations.length; i++) {
+    //       if (movie.locations[i]['real address'] in cache) {
+    //         continue;
+    //       }
+    //       var geoObj = {
+    //         'type': 'Feature',
+    //         'geometry': {
+    //           'type': 'Point',
+    //           'coordinates': [movie.locations[i]['lng'], movie.locations[i]['lat']],
+    //         },
+    //         'properties': {
+    //           'marker-color' : '#3bb2d0',
+    //           'marker-size' : 'small'
+    //         }
+    //       };
+    //       geoJson.push(geoObj);
+    //       cache[movie.locations[i]['real address']] = 1;
+    //     }
+    //   });
+    //   var markers = L.markerClusterGroup();
+    //
+    //   var geoJSONLayer = L.geoJson(geoJson);
+    //   var markers = new L.MarkerClusterGroup();
+    //   markers.addLayer(geoJSONLayer);
+    //   mapGeo.addLayer(markers);
+    // });
     </script>
   </body>
 </html>
