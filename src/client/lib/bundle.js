@@ -462,7 +462,7 @@
 
 	    return (
 	      React.createElement("div", {className: "ui grid"}, 
-	        React.createElement("div", {className: "ui row"}, 
+	        React.createElement("div", {className: classNames('ui row', 'MC-TitleRow')}, 
 	          React.createElement("div", {className: "five wide column"}
 	          ), 
 	          React.createElement("div", {className: "five wide column"}, 
@@ -42613,7 +42613,7 @@
 
 
 	// module
-	exports.push([module.id, ".MC-YearSlider {\n  margin-bottom: 20px;\n}\n.MC-Map {\n  width: 100%;\n  height: 400px;\n}\n.MC-MovieDetail {\n  height: 300px;\n}\n.MC-MovieDetail-Title {\n  margin-bottom: 10px;\n}\n.MC-MovieDetail-InfoRow {\n  margin-bottom: 3px;\n}\n.MC-MovieItem {\n  cursor: pointer;\n}\n.MC-MovieItem:hover {\n  background-color: lightgrey;\n}\n.MC-MovieItem-selected {\n  background-color: lightgrey;\n}\n.MC-MovieList {\n  height: 400px;\n  overflow-y: scroll;\n}\n.MC-Panorama {\n  width: 100%;\n  height: 300px;\n}\n.MC-Panorama-hidden {\n  visibility: hidden;\n}\n.MC-SearchBar {\n  width: 100%;\n}\n", ""]);
+	exports.push([module.id, ".MC-YearSlider {\n  margin-bottom: 20px;\n}\n.MC-Map {\n  width: 100%;\n  height: 400px;\n}\n.MC-MovieDetail {\n  height: 300px;\n}\n.MC-MovieDetail-Title {\n  margin-bottom: 10px;\n}\n.MC-MovieDetail-InfoRow {\n  margin-bottom: 3px;\n}\n.MC-MovieItem {\n  cursor: pointer;\n}\n.MC-MovieItem:hover {\n  background-color: lightgrey;\n}\n.MC-MovieItem-selected {\n  background-color: lightgrey;\n}\n.MC-MovieList {\n  height: 400px;\n  overflow-y: scroll;\n}\n.MC-Panorama {\n  width: 100%;\n  height: 300px;\n}\n.MC-Panorama-hidden {\n  visibility: hidden;\n}\n.MC-TitleRow {\n  margin-top: 10px;\n}\n.MC-SearchBar {\n  width: 100%;\n}\n", ""]);
 
 	// exports
 

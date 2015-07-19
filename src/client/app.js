@@ -416,7 +416,7 @@ var Page = React.createClass({
 
     return (
       <div className='ui grid'>
-        <div className='ui row'>
+        <div className={classNames('ui row', 'MC-TitleRow')}>
           <div className='five wide column'>
           </div>
           <div className='five wide column'>
