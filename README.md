@@ -63,6 +63,7 @@ Reset button clears slider, SearchBar, and selection in MovieList.
 [Less] (http://lesscss.org/)
 [Lodash] (https://lodash.com/)
 [Mapbox.js] (https://www.mapbox.com/mapbox.js/)
+[noUiSlider] (http://refreshless.com/nouislider/)
 [React.js] (https://facebook.github.io/react/)
 [Semantic UI] (http://semantic-ui.com/)
 [Webpack.js] (https://webpack.github.io/)
