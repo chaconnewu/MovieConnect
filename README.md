@@ -4,6 +4,9 @@
 Movie Connect is a web application that allows user to explore filming locations
 of movie filmed in San Francisco. It is available at http://dataagent.org:3000
 
+The general idea about this application is to present as much information as I can
+to the potential users in a well-structured way while avoid information overload.
+
 The movie data is collected from [SF OpenData] (https://data.sfgov.org/Culture-and-Recreation/Film-Locations-in-San-Francisco/yitu-d5am).
 Locations are retrieved by Google Map Services API using Python.
 
