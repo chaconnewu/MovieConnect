@@ -51,24 +51,17 @@ Reset button clears slider, SearchBar, and selection in MovieList.
 3. StreetView cannot be reset
 
 ## Technology Stack
-**Server**: Node.js
+**Server**:
+[Node.js] (https://nodejs.org/)
 
 **Client**:
-
 [jQuery] (https://jquery.com/)
-
 [Google Map API] (https://developers.google.com/maps/documentation/javascript/)
-
 [Less] (http://lesscss.org/)
-
 [Lodash] (https://lodash.com/)
-
 [Mapbox.js] (https://www.mapbox.com/mapbox.js/)
-
 [React.js] (https://facebook.github.io/react/)
-
 [Semantic UI] (http://semantic-ui.com/)
-
 [Webpack.js] (https://webpack.github.io/)
 
 
