@@ -8,35 +8,44 @@ require('./app.less');
 L.mapbox.accessToken = 'pk.eyJ1IjoiY2hhY29ubmV3dSIsImEiOiI4NjNkZWRkZmQ1MTk2NmIwMjQ2YWEwYzE0ZjJkODFjNCJ9.kpgKT1D3pk_v-q52rS4t7g';
 
 var YearSlider = React.createClass({
-  propTypes: {
-    setYearRange: React.PropTypes.func.isRequired
+  propTypes : {
+    setYearRange : React.PropTypes.func.isRequired
   },
+
   componentDidMount () {
     var self = this;
-    var slider = self.getDOMNode();
-    noUiSlider.create(slider, {
-    	start: [ 1915, 2015 ], // Handle start position
-    	step: 1,
-    	limit: 100,
-    	connect: true, // Display a colored bar between the handles
+    self.slider = self.getDOMNode();
+    noUiSlider.create(self.slider, {
+    	start : [1915, 2015],
+    	step : 1,
+    	limit : 100,
+    	connect: true,
     	orientation: 'horizontal',
-    	behaviour: 'tap-drag', // Move handle on tap, bar is draggable
+    	behaviour: 'tap-drag',
     	range: {
     		'min': 1915,
     		'max': 2015
     	},
-    	pips: { // Show a scale with the slider
+    	pips: {
     		mode: 'range',
     		density: 10
     	}
     });
-    slider.noUiSlider.on('change', function() {
-      var range = slider.noUiSlider.get();
+    self.slider.noUiSlider.on('change', function() {
+      var range = self.slider.noUiSlider.get();
       var startYear = parseInt(range[0], 10);
       var endYear = parseInt(range[1], 10);
       self.props.setYearRange(startYear, endYear);
     });
   },
+
+  componentWillReceiveProps (nextProps) {
+    var self = this;
+    if (nextProps.reset) {
+      self.slider.noUiSlider.set([1915, 2015]);
+    }
+  },
+
   render () {
     return (
       <div className='ten wide column'>
@@ -52,6 +61,7 @@ var Panorama = React.createClass({
 
   componentWillReceiveProps (nextProps) {
     var self = this;
+
     if (nextProps.coord) {
       var lat = parseFloat(nextProps.coord.lat);
       var lng = parseFloat(nextProps.coord.lng);
@@ -63,14 +73,21 @@ var Panorama = React.createClass({
           pitch: 10
         }
       };
-      var panorama =
+      self.panorama =
         new google.maps.StreetViewPanorama(self.getDOMNode(), panoramaOptions);
+    } else {
+      if (self.panorama) {
+        self.panorama.setVisible(false);
+      }
     }
   },
 
   render () {
+    var self = this;
     return (
-      <div className='MC-Panorama'>
+      <div
+        className={'MC-Panorama'}
+      >
       </div>
     );
   }
@@ -151,7 +168,7 @@ var MovieDetail = React.createClass({
     if (!movieItem) return <div></div>;
     var actors = [movieItem.actor1, movieItem.actor2, movieItem.actor3];
     actors = actors.filter(function(actor) {
-      return actor !== undefined;
+      return actor.length > 0;
     });
     actors = actors.join(', ');
 
@@ -239,6 +256,14 @@ var SearchBar = React.createClass({
     yearRange : React.PropTypes.array.isRequired
   },
 
+  componentWillReceiveProps (nextProps) {
+    var self = this;
+    console.log(nextProps);
+    if (nextProps.reset) {
+      React.findDOMNode(self.refs.searchInput).value = '';
+    }
+  },
+
   searchInputChange (e) {
     var self = this;
     var searchQuery = e.target.value.trim();
@@ -257,6 +282,7 @@ var SearchBar = React.createClass({
           type='text'
           placeholder={placeholder}
           onChange={self.searchInputChange}
+          ref='searchInput'
         />
         <i className='search icon'></i>
       </div>
@@ -276,6 +302,14 @@ var Page = React.createClass({
       streetViewCoord : null,
       yearRange : [1915, 2015]
     };
+  },
+
+  clearSelection () {
+    var self = this;
+    self.setState({
+      selectedMovie : null,
+      streetViewCoord : null
+    });
   },
 
   comparator (a, b) {
@@ -301,13 +335,24 @@ var Page = React.createClass({
     });
   },
 
+  reset () {
+    var self = this;
+    self.setState({
+      displayMovieData : self.state.movieData,
+      reset : true,
+      selectedMovie : null,
+      streetViewCoord : null,
+      yearRange : [1915, 2015]
+    });
+  },
+
   setYearRange (startYear, endYear) {
     var self = this;
     self.setState({
-      selectedMovie : null,
-      streetViewCoord : null,
+      reset : false,
       yearRange: [startYear, endYear]
     });
+    self.clearSelection();
   },
 
   selectMovie (index) {
@@ -343,17 +388,17 @@ var Page = React.createClass({
       ) {
         return;
       }
-
       if (movieItem.title.toLowerCase().includes(query.toLowerCase())) {
         movieList.push(movieItem);
       }
     });
 
     self.setState({
-      displayMovieData : movieList
+      displayMovieData : movieList,
+      reset : false
     });
+    self.clearSelection();
   },
-
 
   render () {
     var self = this;
@@ -392,7 +437,19 @@ var Page = React.createClass({
           </div>
           <div className='nine wide column'>
             <div className={classNames('ui row', 'MC-YearSlider')}>
-              <YearSlider setYearRange={self.setYearRange}/>
+              <YearSlider
+                clearSelection={self.clearSelection}
+                setYearRange={self.setYearRange}
+                reset={self.state.reset}
+              />
+            </div>
+          </div>
+          <div className='four wide column'>
+            <div
+              className='ui red button'
+              onClick={self.reset}
+            >
+              Reset
             </div>
           </div>
         </div>
@@ -409,6 +466,7 @@ var Page = React.createClass({
             <SearchBar
               searchForMovie={self.searchForMovie}
               yearRange={self.state.yearRange}
+              reset={self.state.reset}
             />
           </div>
         </div>
@@ -434,17 +492,18 @@ var Page = React.createClass({
         <div className='ui row'>
           <div className='one wide column'>
           </div>
-          <div className='six wide column'>
+          <div className='nine wide column'>
             <Panorama
               coord={self.state.streetViewCoord}
             />
           </div>
-          <div className='six wide column'>
+          <div className='four wide column'>
             <MovieDetail
               movieItem={self.state.selectedMovie}
             />
           </div>
         </div>
+
       </div>
     );
   }

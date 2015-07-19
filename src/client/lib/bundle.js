@@ -54,35 +54,44 @@
 	L.mapbox.accessToken = 'pk.eyJ1IjoiY2hhY29ubmV3dSIsImEiOiI4NjNkZWRkZmQ1MTk2NmIwMjQ2YWEwYzE0ZjJkODFjNCJ9.kpgKT1D3pk_v-q52rS4t7g';
 
 	var YearSlider = React.createClass({displayName: "YearSlider",
-	  propTypes: {
-	    setYearRange: React.PropTypes.func.isRequired
+	  propTypes : {
+	    setYearRange : React.PropTypes.func.isRequired
 	  },
+
 	  componentDidMount:function () {
 	    var self = this;
-	    var slider = self.getDOMNode();
-	    noUiSlider.create(slider, {
-	    	start: [ 1915, 2015 ], // Handle start position
-	    	step: 1,
-	    	limit: 100,
-	    	connect: true, // Display a colored bar between the handles
+	    self.slider = self.getDOMNode();
+	    noUiSlider.create(self.slider, {
+	    	start : [1915, 2015],
+	    	step : 1,
+	    	limit : 100,
+	    	connect: true,
 	    	orientation: 'horizontal',
-	    	behaviour: 'tap-drag', // Move handle on tap, bar is draggable
+	    	behaviour: 'tap-drag',
 	    	range: {
 	    		'min': 1915,
 	    		'max': 2015
 	    	},
-	    	pips: { // Show a scale with the slider
+	    	pips: {
 	    		mode: 'range',
 	    		density: 10
 	    	}
 	    });
-	    slider.noUiSlider.on('change', function() {
-	      var range = slider.noUiSlider.get();
+	    self.slider.noUiSlider.on('change', function() {
+	      var range = self.slider.noUiSlider.get();
 	      var startYear = parseInt(range[0], 10);
 	      var endYear = parseInt(range[1], 10);
 	      self.props.setYearRange(startYear, endYear);
 	    });
 	  },
+
+	  componentWillReceiveProps:function (nextProps) {
+	    var self = this;
+	    if (nextProps.reset) {
+	      self.slider.noUiSlider.set([1915, 2015]);
+	    }
+	  },
+
 	  render:function () {
 	    return (
 	      React.createElement("div", {className: "ten wide column"}
@@ -98,6 +107,7 @@
 
 	  componentWillReceiveProps:function (nextProps) {
 	    var self = this;
+
 	    if (nextProps.coord) {
 	      var lat = parseFloat(nextProps.coord.lat);
 	      var lng = parseFloat(nextProps.coord.lng);
@@ -109,14 +119,21 @@
 	          pitch: 10
 	        }
 	      };
-	      var panorama =
+	      self.panorama =
 	        new google.maps.StreetViewPanorama(self.getDOMNode(), panoramaOptions);
+	    } else {
+	      if (self.panorama) {
+	        self.panorama.setVisible(false);
+	      }
 	    }
 	  },
 
 	  render:function () {
+	    var self = this;
 	    return (
-	      React.createElement("div", {className: "MC-Panorama"}
+	      React.createElement("div", {
+	        className: 'MC-Panorama'
+	      }
 	      )
 	    );
 	  }
@@ -197,7 +214,7 @@
 	    if (!movieItem) return React.createElement("div", null);
 	    var actors = [movieItem.actor1, movieItem.actor2, movieItem.actor3];
 	    actors = actors.filter(function(actor) {
-	      return actor !== undefined;
+	      return actor.length > 0;
 	    });
 	    actors = actors.join(', ');
 
@@ -285,6 +302,14 @@
 	    yearRange : React.PropTypes.array.isRequired
 	  },
 
+	  componentWillReceiveProps:function (nextProps) {
+	    var self = this;
+	    console.log(nextProps);
+	    if (nextProps.reset) {
+	      React.findDOMNode(self.refs.searchInput).value = '';
+	    }
+	  },
+
 	  searchInputChange:function (e) {
 	    var self = this;
 	    var searchQuery = e.target.value.trim();
@@ -302,7 +327,8 @@
 	        React.createElement("input", {
 	          type: "text", 
 	          placeholder: placeholder, 
-	          onChange: self.searchInputChange}
+	          onChange: self.searchInputChange, 
+	          ref: "searchInput"}
 	        ), 
 	        React.createElement("i", {className: "search icon"})
 	      )
@@ -322,6 +348,14 @@
 	      streetViewCoord : null,
 	      yearRange : [1915, 2015]
 	    };
+	  },
+
+	  clearSelection:function () {
+	    var self = this;
+	    self.setState({
+	      selectedMovie : null,
+	      streetViewCoord : null
+	    });
 	  },
 
 	  comparator:function (a, b) {
@@ -347,13 +381,24 @@
 	    });
 	  },
 
+	  reset:function () {
+	    var self = this;
+	    self.setState({
+	      displayMovieData : self.state.movieData,
+	      reset : true,
+	      selectedMovie : null,
+	      streetViewCoord : null,
+	      yearRange : [1915, 2015]
+	    });
+	  },
+
 	  setYearRange:function (startYear, endYear) {
 	    var self = this;
 	    self.setState({
-	      selectedMovie : null,
-	      streetViewCoord : null,
+	      reset : false,
 	      yearRange: [startYear, endYear]
 	    });
+	    self.clearSelection();
 	  },
 
 	  selectMovie:function (index) {
@@ -389,17 +434,17 @@
 	      ) {
 	        return;
 	      }
-
 	      if (movieItem.title.toLowerCase().includes(query.toLowerCase())) {
 	        movieList.push(movieItem);
 	      }
 	    });
 
 	    self.setState({
-	      displayMovieData : movieList
+	      displayMovieData : movieList,
+	      reset : false
 	    });
+	    self.clearSelection();
 	  },
-
 
 	  render:function () {
 	    var self = this;
@@ -438,7 +483,19 @@
 	          ), 
 	          React.createElement("div", {className: "nine wide column"}, 
 	            React.createElement("div", {className: classNames('ui row', 'MC-YearSlider')}, 
-	              React.createElement(YearSlider, {setYearRange: self.setYearRange})
+	              React.createElement(YearSlider, {
+	                clearSelection: self.clearSelection, 
+	                setYearRange: self.setYearRange, 
+	                reset: self.state.reset}
+	              )
+	            )
+	          ), 
+	          React.createElement("div", {className: "four wide column"}, 
+	            React.createElement("div", {
+	              className: "ui red button", 
+	              onClick: self.reset
+	            }, 
+	              "Reset"
 	            )
 	          )
 	        ), 
@@ -454,7 +511,8 @@
 	          React.createElement("div", {className: "four wide column"}, 
 	            React.createElement(SearchBar, {
 	              searchForMovie: self.searchForMovie, 
-	              yearRange: self.state.yearRange}
+	              yearRange: self.state.yearRange, 
+	              reset: self.state.reset}
 	            )
 	          )
 	        ), 
@@ -480,17 +538,18 @@
 	        React.createElement("div", {className: "ui row"}, 
 	          React.createElement("div", {className: "one wide column"}
 	          ), 
-	          React.createElement("div", {className: "six wide column"}, 
+	          React.createElement("div", {className: "nine wide column"}, 
 	            React.createElement(Panorama, {
 	              coord: self.state.streetViewCoord}
 	            )
 	          ), 
-	          React.createElement("div", {className: "six wide column"}, 
+	          React.createElement("div", {className: "four wide column"}, 
 	            React.createElement(MovieDetail, {
 	              movieItem: self.state.selectedMovie}
 	            )
 	          )
 	        )
+
 	      )
 	    );
 	  }
@@ -42554,7 +42613,7 @@
 
 
 	// module
-	exports.push([module.id, ".MC-YearSlider {\n  margin-bottom: 20px;\n}\n.MC-Map {\n  width: 100%;\n  height: 400px;\n}\n.MC-MovieDetail {\n  height: 300px;\n}\n.MC-MovieDetail-Title {\n  margin-bottom: 10px;\n}\n.MC-MovieDetail-InfoRow {\n  margin-bottom: 3px;\n}\n.MC-MovieItem {\n  cursor: pointer;\n}\n.MC-MovieItem:hover {\n  background-color: lightgrey;\n}\n.MC-MovieItem-selected {\n  background-color: lightgrey;\n}\n.MC-MovieList {\n  height: 400px;\n  overflow-y: scroll;\n}\n.MC-Panorama {\n  width: 100%;\n  height: 300px;\n}\n.MC-SearchBar {\n  width: 100%;\n}\n", ""]);
+	exports.push([module.id, ".MC-YearSlider {\n  margin-bottom: 20px;\n}\n.MC-Map {\n  width: 100%;\n  height: 400px;\n}\n.MC-MovieDetail {\n  height: 300px;\n}\n.MC-MovieDetail-Title {\n  margin-bottom: 10px;\n}\n.MC-MovieDetail-InfoRow {\n  margin-bottom: 3px;\n}\n.MC-MovieItem {\n  cursor: pointer;\n}\n.MC-MovieItem:hover {\n  background-color: lightgrey;\n}\n.MC-MovieItem-selected {\n  background-color: lightgrey;\n}\n.MC-MovieList {\n  height: 400px;\n  overflow-y: scroll;\n}\n.MC-Panorama {\n  width: 100%;\n  height: 300px;\n}\n.MC-Panorama-hidden {\n  visibility: hidden;\n}\n.MC-SearchBar {\n  width: 100%;\n}\n", ""]);
 
 	// exports
 
