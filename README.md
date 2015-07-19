@@ -50,6 +50,20 @@ Reset button clears slider, SearchBar, and selection in MovieList.
 2. For some locations, Google StreetView API does not return images
 3. StreetView cannot be reset
 
+## Technology Stack
+**Server**: Node.js
+**Client**:
+[jQuery] (https://jquery.com/)
+[Google Map API] (https://developers.google.com/maps/documentation/javascript/)
+[Less] (http://lesscss.org/)
+[Lodash] (https://lodash.com/)
+[Mapbox.js] (https://www.mapbox.com/mapbox.js/)
+[React.js] (https://facebook.github.io/react/)
+[Semantic UI] (http://semantic-ui.com/)
+[Webpack.js] (https://webpack.github.io/)
+
+
+
 ## Contact
 Please submit an issue request or contact me at chaconnewu AT gamil dot com if
 you have any comments or suggestions.
