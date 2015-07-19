@@ -1,7 +1,7 @@
 var express = require('express');
-var app = express();
 var path = require('path');
 var http = require('http');
+var app = express();
 var port = 3000;
 
 var CLIENT_DIR = '/src/client';

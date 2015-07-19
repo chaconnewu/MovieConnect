@@ -59,7 +59,7 @@
 	  },
 	  componentDidMount:function () {
 	    var self = this;
-	    var slider = this.getDOMNode();
+	    var slider = self.getDOMNode();
 	    noUiSlider.create(slider, {
 	    	start: [ 1915, 2015 ], // Handle start position
 	    	step: 1,
@@ -97,6 +97,7 @@
 	  },
 
 	  componentWillReceiveProps:function (nextProps) {
+	    var self = this;
 	    if (nextProps.coord) {
 	      var lat = parseFloat(nextProps.coord.lat);
 	      var lng = parseFloat(nextProps.coord.lng);
@@ -109,7 +110,7 @@
 	        }
 	      };
 	      var panorama =
-	        new google.maps.StreetViewPanorama(this.getDOMNode(), panoramaOptions);
+	        new google.maps.StreetViewPanorama(self.getDOMNode(), panoramaOptions);
 	    }
 	  },
 
@@ -121,31 +122,60 @@
 	  }
 	});
 
-
-
 	var MapView = React.createClass({displayName: "MapView",
 	  propTypes : {
-	    geoJSON : React.PropTypes.array.isRequired,
+	    movieList : React.PropTypes.array.isRequired,
+	    selectedMovie : React.PropTypes.object.isRequired,
 	    setCoord : React.PropTypes.func.isRequired
 	  },
 
 	  componentDidMount:function () {
-	    this.map = L.mapbox.map(this.getDOMNode(), 'mapbox.pirates')
+	    var self = this;
+	    self.map = L.mapbox.map(self.getDOMNode(), 'mapbox.pirates')
 	      .setView([37.77,-122.43], 12);
 	  },
 
 	  componentWillReceiveProps:function (nextProps) {
 	    var self = this;
+	    var cache = {};
+	    var geoJson = [];
+	    var movieList = !nextProps.selectedMovie ?
+	      nextProps.movieList : [nextProps.selectedMovie];
+	    movieList.forEach(function(movie) {
+	      for (var i = 0; i < movie.locations.length; i++) {
+	        if (cache.hasOwnProperty(movie.locations[i]['real address'])) {
+	          continue;
+	        }
+	        var geoObj = self.makeGeoObj(movie.locations[i]);
+	        geoJson.push(geoObj);
+	        cache[movie.locations[i]['real address']] = 1;
+	      }
+	    });
 	    if (self.markers) {
 	      self.map.removeLayer(self.markers);
 	    }
-	    var geoJSONLayer = L.geoJson(nextProps.geoJSON);
+	    var geoJSONLayer = L.geoJson(geoJson);
 	    self.markers = new L.MarkerClusterGroup();
 	    self.markers.addLayer(geoJSONLayer);
 	    self.markers.on('click', function(d) {
 	      self.props.setCoord(d.latlng);
 	    });
-	    this.map.addLayer(self.markers);
+	    self.map.addLayer(self.markers);
+	  },
+
+	  makeGeoObj:function (location) {
+	    return {
+	      'type' : 'Feature',
+	      'address' : location['real address'],
+	      'geometry' : {
+	        'type' : 'Point',
+	        'coordinates' : [location.lng, location.lat],
+	      },
+	      'properties' : {
+	        'marker-color' : '#3bb2d0',
+	        'marker-size' : 'small'
+	      }
+	    };
 	  },
 
 	  render:function () {
@@ -165,11 +195,33 @@
 	    var self = this;
 	    var movieItem = self.props.movieItem;
 	    if (!movieItem) return React.createElement("div", null);
-	    console.log(movieItem);
+	    var actors = [movieItem.actor1, movieItem.actor2, movieItem.actor3];
+	    actors = actors.filter(function(actor) {
+	      return actor !== undefined;
+	    });
+	    actors = actors.join(', ');
+
 	    return (
 	      React.createElement("div", {className: "MC-MovieDetail"}, 
-	        React.createElement("div", {className: "ui row"}, 
-	          React.createElement("h3", {className: "ui blue header"}, movieItem.title)
+	        React.createElement("div", {className: classNames('ui row', 'MC-MovieDetail-Title')}, 
+	          React.createElement("h3", {className: "ui blue header"}, 
+	            movieItem.title + ' (' + movieItem.year + ')')
+	        ), 
+	        React.createElement("div", {className: classNames('ui row', 'MC-MovieDetail-InfoRow')}, 
+	          React.createElement("div", {className: "ui label"}, "Director: "), 
+	          React.createElement("span", null, movieItem.director)
+	        ), 
+	        React.createElement("div", {className: classNames('ui row', 'MC-MovieDetail-InfoRow')}, 
+	          React.createElement("div", {className: "ui label"}, "Writer: "), 
+	          React.createElement("span", null, movieItem.writer)
+	        ), 
+	        React.createElement("div", {className: classNames('ui row', 'MC-MovieDetail-InfoRow')}, 
+	          React.createElement("div", {className: "ui label"}, "Actors: "), 
+	          React.createElement("span", null, actors)
+	        ), 
+	        React.createElement("div", {className: classNames('ui row', 'MC-MovieDetail-InfoRow')}, 
+	          React.createElement("div", {className: "ui label"}, "Fun Facts: "), 
+	          React.createElement("span", null, movieItem.facts)
 	        )
 	      )
 	    );
@@ -266,7 +318,7 @@
 	    return {
 	      displayMovieData : [],
 	      movieData : [],
-	      selectedMoive : null,
+	      selectedMovie : null,
 	      streetViewCoord : null,
 	      yearRange : [1915, 2015]
 	    };
@@ -298,6 +350,8 @@
 	  setYearRange:function (startYear, endYear) {
 	    var self = this;
 	    self.setState({
+	      selectedMovie : null,
+	      streetViewCoord : null,
 	      yearRange: [startYear, endYear]
 	    });
 	  },
@@ -309,9 +363,11 @@
 	      return movie;
 	    });
 	    movieData[index].selected = true;
+	    var streetViewCoord = movieData[index].locations[0];
 	    self.setState({
 	      displayMovieData : movieData,
-	      selectedMovie : movieData[index]
+	      selectedMovie : movieData[index],
+	      streetViewCoord : streetViewCoord
 	    });
 	  },
 
@@ -344,27 +400,12 @@
 	    });
 	  },
 
-	  makeGeoObj:function (location) {
-	    return {
-	      'type' : 'Feature',
-	      'address' : location['real address'],
-	      'geometry' : {
-	        'type' : 'Point',
-	        'coordinates' : [location.lng, location.lat],
-	      },
-	      'properties' : {
-	        'marker-color' : '#3bb2d0',
-	        'marker-size' : 'small'
-	      }
-	    };
-	  },
 
 	  render:function () {
 	    var self = this;
 	    var startYear = self.state.yearRange[0];
 	    var endYear = self.state.yearRange[1];
-	    var cache = {};
-	    var geoJson = [];
+
 	    var movieTmp = _.cloneDeep(self.state.displayMovieData);
 	    var movieList = [];
 	    movieTmp.forEach(function(movie) {
@@ -372,14 +413,6 @@
 	        return;
 	      }
 	      movieList.push(movie);
-	      for (var i = 0; i < movie.locations.length; i++) {
-	        if (movie.locations[i]['real address'] in cache) {
-	          continue;
-	        }
-	        var geoObj = self.makeGeoObj(movie.locations[i]);
-	        geoJson.push(geoObj);
-	        cache[movie.locations[i]['real address']] = 1;
-	      }
 	    });
 
 	    return (
@@ -431,7 +464,8 @@
 	          ), 
 	          React.createElement("div", {className: "nine wide column"}, 
 	            React.createElement(MapView, {
-	              geoJSON: geoJson, 
+	              movieList: movieList, 
+	              selectedMovie: self.state.selectedMovie, 
 	              setCoord: self.setStreetViewCoord}
 	            )
 	          ), 
@@ -42520,7 +42554,7 @@
 
 
 	// module
-	exports.push([module.id, ".MC-YearSlider {\n  margin-bottom: 50px;\n}\n.MC-Map {\n  width: 100%;\n  height: 400px;\n}\n.MC-MovieDetail {\n  height: 300px;\n}\n.MC-MovieItem {\n  cursor: pointer;\n}\n.MC-MovieItem:hover {\n  background-color: lightgrey;\n}\n.MC-MovieItem-selected {\n  background-color: lightgrey;\n}\n.MC-MovieList {\n  height: 400px;\n  overflow-y: scroll;\n}\n.MC-Panorama {\n  width: 100%;\n  height: 300px;\n}\n.MC-SearchBar {\n  width: 100%;\n}\n", ""]);
+	exports.push([module.id, ".MC-YearSlider {\n  margin-bottom: 20px;\n}\n.MC-Map {\n  width: 100%;\n  height: 400px;\n}\n.MC-MovieDetail {\n  height: 300px;\n}\n.MC-MovieDetail-Title {\n  margin-bottom: 10px;\n}\n.MC-MovieDetail-InfoRow {\n  margin-bottom: 3px;\n}\n.MC-MovieItem {\n  cursor: pointer;\n}\n.MC-MovieItem:hover {\n  background-color: lightgrey;\n}\n.MC-MovieItem-selected {\n  background-color: lightgrey;\n}\n.MC-MovieList {\n  height: 400px;\n  overflow-y: scroll;\n}\n.MC-Panorama {\n  width: 100%;\n  height: 300px;\n}\n.MC-SearchBar {\n  width: 100%;\n}\n", ""]);
 
 	// exports
 

@@ -13,7 +13,7 @@ var YearSlider = React.createClass({
   },
   componentDidMount () {
     var self = this;
-    var slider = this.getDOMNode();
+    var slider = self.getDOMNode();
     noUiSlider.create(slider, {
     	start: [ 1915, 2015 ], // Handle start position
     	step: 1,
@@ -51,6 +51,7 @@ var Panorama = React.createClass({
   },
 
   componentWillReceiveProps (nextProps) {
+    var self = this;
     if (nextProps.coord) {
       var lat = parseFloat(nextProps.coord.lat);
       var lng = parseFloat(nextProps.coord.lng);
@@ -63,7 +64,7 @@ var Panorama = React.createClass({
         }
       };
       var panorama =
-        new google.maps.StreetViewPanorama(this.getDOMNode(), panoramaOptions);
+        new google.maps.StreetViewPanorama(self.getDOMNode(), panoramaOptions);
     }
   },
 
@@ -75,31 +76,60 @@ var Panorama = React.createClass({
   }
 });
 
-
-
 var MapView = React.createClass({
   propTypes : {
-    geoJSON : React.PropTypes.array.isRequired,
+    movieList : React.PropTypes.array.isRequired,
+    selectedMovie : React.PropTypes.object.isRequired,
     setCoord : React.PropTypes.func.isRequired
   },
 
   componentDidMount () {
-    this.map = L.mapbox.map(this.getDOMNode(), 'mapbox.pirates')
+    var self = this;
+    self.map = L.mapbox.map(self.getDOMNode(), 'mapbox.pirates')
       .setView([37.77,-122.43], 12);
   },
 
   componentWillReceiveProps (nextProps) {
     var self = this;
+    var cache = {};
+    var geoJson = [];
+    var movieList = !nextProps.selectedMovie ?
+      nextProps.movieList : [nextProps.selectedMovie];
+    movieList.forEach(function(movie) {
+      for (var i = 0; i < movie.locations.length; i++) {
+        if (cache.hasOwnProperty(movie.locations[i]['real address'])) {
+          continue;
+        }
+        var geoObj = self.makeGeoObj(movie.locations[i]);
+        geoJson.push(geoObj);
+        cache[movie.locations[i]['real address']] = 1;
+      }
+    });
     if (self.markers) {
       self.map.removeLayer(self.markers);
     }
-    var geoJSONLayer = L.geoJson(nextProps.geoJSON);
+    var geoJSONLayer = L.geoJson(geoJson);
     self.markers = new L.MarkerClusterGroup();
     self.markers.addLayer(geoJSONLayer);
     self.markers.on('click', function(d) {
       self.props.setCoord(d.latlng);
     });
-    this.map.addLayer(self.markers);
+    self.map.addLayer(self.markers);
+  },
+
+  makeGeoObj (location) {
+    return {
+      'type' : 'Feature',
+      'address' : location['real address'],
+      'geometry' : {
+        'type' : 'Point',
+        'coordinates' : [location.lng, location.lat],
+      },
+      'properties' : {
+        'marker-color' : '#3bb2d0',
+        'marker-size' : 'small'
+      }
+    };
   },
 
   render () {
@@ -119,11 +149,33 @@ var MovieDetail = React.createClass({
     var self = this;
     var movieItem = self.props.movieItem;
     if (!movieItem) return <div></div>;
-    console.log(movieItem);
+    var actors = [movieItem.actor1, movieItem.actor2, movieItem.actor3];
+    actors = actors.filter(function(actor) {
+      return actor !== undefined;
+    });
+    actors = actors.join(', ');
+
     return (
       <div className='MC-MovieDetail'>
-        <div className='ui row'>
-          <h3 className='ui blue header'>{movieItem.title}</h3>
+        <div className={classNames('ui row', 'MC-MovieDetail-Title')}>
+          <h3 className='ui blue header'>
+            {movieItem.title + ' (' + movieItem.year + ')'}</h3>
+        </div>
+        <div className={classNames('ui row', 'MC-MovieDetail-InfoRow')}>
+          <div className='ui label'>Director: </div>
+          <span>{movieItem.director}</span>
+        </div>
+        <div className={classNames('ui row', 'MC-MovieDetail-InfoRow')}>
+          <div className='ui label'>Writer: </div>
+          <span>{movieItem.writer}</span>
+        </div>
+        <div className={classNames('ui row', 'MC-MovieDetail-InfoRow')}>
+          <div className='ui label'>Actors: </div>
+          <span>{actors}</span>
+        </div>
+        <div className={classNames('ui row', 'MC-MovieDetail-InfoRow')}>
+          <div className='ui label'>Fun Facts: </div>
+          <span>{movieItem.facts}</span>
         </div>
       </div>
     );
@@ -220,7 +272,7 @@ var Page = React.createClass({
     return {
       displayMovieData : [],
       movieData : [],
-      selectedMoive : null,
+      selectedMovie : null,
       streetViewCoord : null,
       yearRange : [1915, 2015]
     };
@@ -252,6 +304,8 @@ var Page = React.createClass({
   setYearRange (startYear, endYear) {
     var self = this;
     self.setState({
+      selectedMovie : null,
+      streetViewCoord : null,
       yearRange: [startYear, endYear]
     });
   },
@@ -263,9 +317,11 @@ var Page = React.createClass({
       return movie;
     });
     movieData[index].selected = true;
+    var streetViewCoord = movieData[index].locations[0];
     self.setState({
       displayMovieData : movieData,
-      selectedMovie : movieData[index]
+      selectedMovie : movieData[index],
+      streetViewCoord : streetViewCoord
     });
   },
 
@@ -298,27 +354,12 @@ var Page = React.createClass({
     });
   },
 
-  makeGeoObj (location) {
-    return {
-      'type' : 'Feature',
-      'address' : location['real address'],
-      'geometry' : {
-        'type' : 'Point',
-        'coordinates' : [location.lng, location.lat],
-      },
-      'properties' : {
-        'marker-color' : '#3bb2d0',
-        'marker-size' : 'small'
-      }
-    };
-  },
 
   render () {
     var self = this;
     var startYear = self.state.yearRange[0];
     var endYear = self.state.yearRange[1];
-    var cache = {};
-    var geoJson = [];
+
     var movieTmp = _.cloneDeep(self.state.displayMovieData);
     var movieList = [];
     movieTmp.forEach(function(movie) {
@@ -326,14 +367,6 @@ var Page = React.createClass({
         return;
       }
       movieList.push(movie);
-      for (var i = 0; i < movie.locations.length; i++) {
-        if (movie.locations[i]['real address'] in cache) {
-          continue;
-        }
-        var geoObj = self.makeGeoObj(movie.locations[i]);
-        geoJson.push(geoObj);
-        cache[movie.locations[i]['real address']] = 1;
-      }
     });
 
     return (
@@ -385,7 +418,8 @@ var Page = React.createClass({
           </div>
           <div className='nine wide column'>
             <MapView
-              geoJSON={geoJson}
+              movieList={movieList}
+              selectedMovie={self.state.selectedMovie}
               setCoord={self.setStreetViewCoord}
             />
           </div>
