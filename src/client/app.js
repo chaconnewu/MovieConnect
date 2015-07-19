@@ -45,22 +45,61 @@ var YearSlider = React.createClass({
   }
 });
 
+var Panorama = React.createClass({
+  propTypes : {
+
+  },
+  componentWillReceiveProps (nextProps) {
+    if (nextProps.coord) {
+      var lat = parseFloat(nextProps.coord.lat);
+      var lng = parseFloat(nextProps.coord.lng);
+      var pos = new google.maps.LatLng(lat, lng);
+      var panoramaOptions = {
+        position: pos,
+        pov: {
+          heading: 34,
+          pitch: 10
+        }
+      };
+      var panorama =
+        new google.maps.StreetViewPanorama(this.getDOMNode(), panoramaOptions);
+    }
+  },
+
+  render () {
+    return (
+      <div className='MC-Panorama'>
+      </div>
+    );
+  }
+});
+
 var MapView = React.createClass({
   propTypes : {
-    geoJSON: React.PropTypes.array.isRequired
+    geoJSON : React.PropTypes.array.isRequired,
+    setCoord : React.PropTypes.func.isRequired
   },
+
   componentDidMount () {
     this.map = L.mapbox.map(this.getDOMNode(), 'mapbox.pirates')
       .setView([37.77,-122.43], 12);
   },
+
   componentWillReceiveProps (nextProps) {
     var self = this;
     if (self.markers) {
       self.map.removeLayer(self.markers);
     }
-    var geoJSONLayer = L.geoJson(nextProps.geoJSON);
+    var geoJSONLayer = L.geoJson(nextProps.geoJSON, {
+      onEachFeature : function(feature, layer) {
+        layer.bindPopup('<div>hello</div>');
+      }
+    });
     self.markers = new L.MarkerClusterGroup();
     self.markers.addLayer(geoJSONLayer);
+    self.markers.on('click', function(d) {
+      self.props.setCoord(d.latlng);
+    });
     this.map.addLayer(self.markers);
   },
 
@@ -74,8 +113,9 @@ var MapView = React.createClass({
 
 var MovieList = React.createClass({
   propTypes : {
-
+    movieList : React.PropTypes.array.isRequired
   },
+
   render () {
     var self = this;
     var names = self.props.movieList.map(function(movie) {
@@ -127,6 +167,7 @@ var Page = React.createClass({
     return {
       displayMovieData : [],
       movieData : [],
+      streetViewCoord : null,
       yearRange : [1915, 2015]
     };
   },
@@ -147,6 +188,13 @@ var Page = React.createClass({
     var self = this;
     self.setState({
       yearRange: [startYear, endYear]
+    });
+  },
+
+  setStreetViewCoord (coord) {
+    var self = this;
+    self.setState({
+      streetViewCoord : coord
     });
   },
 
@@ -176,7 +224,6 @@ var Page = React.createClass({
     return {
       'type': 'Feature',
       'geometry' : {
-        'image' : 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Cherry_Blossoms_and_Washington_Monument.jpg/320px-Cherry_Blossoms_and_Washington_Monument.jpg',
         'type' : 'Point',
         'coordinates' : [lng, lat],
       },
@@ -184,14 +231,13 @@ var Page = React.createClass({
         'marker-color' : '#3bb2d0',
         'marker-size' : 'small'
       }
-    }
+    };
   },
 
   render () {
     var self = this;
     var startYear = self.state.yearRange[0];
     var endYear = self.state.yearRange[1];
-
     var cache = {};
     var geoJson = [];
     var movieTmp = _.cloneDeep(self.state.displayMovieData);
@@ -258,10 +304,23 @@ var Page = React.createClass({
           <div className='one wide column'>
           </div>
           <div className='nine wide column'>
-            <MapView geoJSON={geoJson}/>
+            <MapView
+              geoJSON={geoJson}
+              setCoord = {self.setStreetViewCoord}
+            />
           </div>
           <div className='four wide column'>
             <MovieList movieList={movieList} />
+          </div>
+        </div>
+
+        <div className='ui row'>
+          <div className='one wide column'>
+          </div>
+          <div className='six wide column'>
+            <Panorama
+              coord = {self.state.streetViewCoord}
+            />
           </div>
         </div>
       </div>

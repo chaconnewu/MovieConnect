@@ -91,22 +91,61 @@
 	  }
 	});
 
+	var Panorama = React.createClass({displayName: "Panorama",
+	  propTypes : {
+
+	  },
+	  componentWillReceiveProps:function (nextProps) {
+	    if (nextProps.coord) {
+	      var lat = parseFloat(nextProps.coord.lat);
+	      var lng = parseFloat(nextProps.coord.lng);
+	      var pos = new google.maps.LatLng(lat, lng);
+	      var panoramaOptions = {
+	        position: pos,
+	        pov: {
+	          heading: 34,
+	          pitch: 10
+	        }
+	      };
+	      var panorama =
+	        new google.maps.StreetViewPanorama(this.getDOMNode(), panoramaOptions);
+	    }
+	  },
+
+	  render:function () {
+	    return (
+	      React.createElement("div", {className: "MC-Panorama"}
+	      )
+	    );
+	  }
+	});
+
 	var MapView = React.createClass({displayName: "MapView",
 	  propTypes : {
-	    geoJSON: React.PropTypes.array.isRequired
+	    geoJSON : React.PropTypes.array.isRequired,
+	    setCoord : React.PropTypes.func.isRequired
 	  },
+
 	  componentDidMount:function () {
 	    this.map = L.mapbox.map(this.getDOMNode(), 'mapbox.pirates')
 	      .setView([37.77,-122.43], 12);
 	  },
+
 	  componentWillReceiveProps:function (nextProps) {
 	    var self = this;
 	    if (self.markers) {
 	      self.map.removeLayer(self.markers);
 	    }
-	    var geoJSONLayer = L.geoJson(nextProps.geoJSON);
+	    var geoJSONLayer = L.geoJson(nextProps.geoJSON, {
+	      onEachFeature : function(feature, layer) {
+	        layer.bindPopup('<div>hello</div>');
+	      }
+	    });
 	    self.markers = new L.MarkerClusterGroup();
 	    self.markers.addLayer(geoJSONLayer);
+	    self.markers.on('click', function(d) {
+	      self.props.setCoord(d.latlng);
+	    });
 	    this.map.addLayer(self.markers);
 	  },
 
@@ -120,8 +159,9 @@
 
 	var MovieList = React.createClass({displayName: "MovieList",
 	  propTypes : {
-
+	    movieList : React.PropTypes.array.isRequired
 	  },
+
 	  render:function () {
 	    var self = this;
 	    var names = self.props.movieList.map(function(movie) {
@@ -173,6 +213,7 @@
 	    return {
 	      displayMovieData : [],
 	      movieData : [],
+	      streetViewCoord : null,
 	      yearRange : [1915, 2015]
 	    };
 	  },
@@ -193,6 +234,13 @@
 	    var self = this;
 	    self.setState({
 	      yearRange: [startYear, endYear]
+	    });
+	  },
+
+	  setStreetViewCoord:function (coord) {
+	    var self = this;
+	    self.setState({
+	      streetViewCoord : coord
 	    });
 	  },
 
@@ -222,7 +270,6 @@
 	    return {
 	      'type': 'Feature',
 	      'geometry' : {
-	        'image' : 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Cherry_Blossoms_and_Washington_Monument.jpg/320px-Cherry_Blossoms_and_Washington_Monument.jpg',
 	        'type' : 'Point',
 	        'coordinates' : [lng, lat],
 	      },
@@ -230,14 +277,13 @@
 	        'marker-color' : '#3bb2d0',
 	        'marker-size' : 'small'
 	      }
-	    }
+	    };
 	  },
 
 	  render:function () {
 	    var self = this;
 	    var startYear = self.state.yearRange[0];
 	    var endYear = self.state.yearRange[1];
-
 	    var cache = {};
 	    var geoJson = [];
 	    var movieTmp = _.cloneDeep(self.state.displayMovieData);
@@ -304,10 +350,23 @@
 	          React.createElement("div", {className: "one wide column"}
 	          ), 
 	          React.createElement("div", {className: "nine wide column"}, 
-	            React.createElement(MapView, {geoJSON: geoJson})
+	            React.createElement(MapView, {
+	              geoJSON: geoJson, 
+	              setCoord: self.setStreetViewCoord}
+	            )
 	          ), 
 	          React.createElement("div", {className: "four wide column"}, 
 	            React.createElement(MovieList, {movieList: movieList})
+	          )
+	        ), 
+
+	        React.createElement("div", {className: "ui row"}, 
+	          React.createElement("div", {className: "one wide column"}
+	          ), 
+	          React.createElement("div", {className: "six wide column"}, 
+	            React.createElement(Panorama, {
+	              coord: self.state.streetViewCoord}
+	            )
 	          )
 	        )
 	      )
@@ -42373,7 +42432,7 @@
 
 
 	// module
-	exports.push([module.id, ".MC-YearSlider {\n  margin-bottom: 50px;\n}\n.MC-Map {\n  width: 100%;\n  height: 500px;\n}\n.MC-SearchBar {\n  width: 100%;\n}\n.MC-MovieList {\n  height: 500px;\n  overflow-y: scroll;\n}\n", ""]);
+	exports.push([module.id, ".MC-YearSlider {\n  margin-bottom: 50px;\n}\n.MC-Map {\n  width: 100%;\n  height: 400px;\n}\n.MC-MovieList {\n  height: 400px;\n  overflow-y: scroll;\n}\n.MC-Panorama {\n  width: 100%;\n  height: 300px;\n}\n.MC-SearchBar {\n  width: 100%;\n}\n", ""]);
 
 	// exports
 
