@@ -53,6 +53,9 @@
 
 	L.mapbox.accessToken = 'pk.eyJ1IjoiY2hhY29ubmV3dSIsImEiOiI4NjNkZWRkZmQ1MTk2NmIwMjQ2YWEwYzE0ZjJkODFjNCJ9.kpgKT1D3pk_v-q52rS4t7g';
 
+	/*
+	 * A slider component to show the range of movie releasing years
+	 */
 	var YearSlider = React.createClass({displayName: "YearSlider",
 	  propTypes : {
 	    setYearRange : React.PropTypes.func.isRequired
@@ -100,6 +103,9 @@
 	  }
 	});
 
+	/*
+	 * Google streetview component
+	 */
 	var Panorama = React.createClass({displayName: "Panorama",
 	  propTypes : {
 	    coord : React.PropTypes.object.isRequired
@@ -139,6 +145,10 @@
 	  }
 	});
 
+	/*
+	 * A map view component to show San Francisco map and
+	 * mark filming locations
+	 */
 	var MapView = React.createClass({displayName: "MapView",
 	  propTypes : {
 	    movieList : React.PropTypes.array.isRequired,
@@ -203,6 +213,9 @@
 	  }
 	});
 
+	/*
+	 * Show detailed movie infomation
+	 */
 	var MovieDetail = React.createClass({displayName: "MovieDetail",
 	  propTypes : {
 	    movieItem : React.PropTypes.object.isRequired
@@ -245,6 +258,9 @@
 	  }
 	});
 
+	/*
+	 * A movie item component in the movie list
+	 */
 	var MovieItem = React.createClass({displayName: "MovieItem",
 	  propTypes : {
 	    index : React.PropTypes.number.isRequired,
@@ -271,6 +287,9 @@
 	  }
 	});
 
+	/*
+	 * A movie list component
+	 */
 	var MovieList = React.createClass({displayName: "MovieList",
 	  propTypes : {
 	    movieList : React.PropTypes.array.isRequired,
@@ -296,6 +315,9 @@
 	  }
 	});
 
+	/*
+	 * A searchbar component
+	 */
 	var SearchBar = React.createClass({displayName: "SearchBar",
 	  propTypes : {
 	    searchForMovie : React.PropTypes.func.isRequired,
@@ -304,7 +326,6 @@
 
 	  componentWillReceiveProps:function (nextProps) {
 	    var self = this;
-	    console.log(nextProps);
 	    if (nextProps.reset) {
 	      React.findDOMNode(self.refs.searchInput).value = '';
 	    }
@@ -337,7 +358,8 @@
 	});
 
 	/*
-	 * React Component that manages states and lays out the UI structure
+	 * React Component that manages states and layouts
+	 * of the Application UI structure
 	 */
 	var Page = React.createClass({displayName: "Page",
 	  getInitialState:function () {
