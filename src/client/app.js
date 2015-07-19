@@ -1,6 +1,6 @@
-var React = require('react');
 var $ = require('jquery');
 var _ = require('lodash');
+var React = require('react');
 var classNames = require('classnames');
 
 require('./app.less');
@@ -77,86 +77,65 @@ var MovieList = React.createClass({
 
   },
   render () {
+    var self = this;
+    var names = self.props.movieList.map(function(movie) {
+      return movie.title;
+    });
+    names.sort();
+    var nameList = names.map(function(movieTitle) {
+      return <div>{movieTitle}</div>;
+    });
     return (
-      <div>
-
+      <div className='MC-MovieList'>
+        {nameList}
       </div>
     );
   }
 });
 
+var SearchBar = React.createClass({
+  propTypes : {
+    searchForMovie : React.PropTypes.func.isRequired
+  },
+
+  searchInputChange (e) {
+    var self = this;
+    var searchQuery = e.target.value.trim();
+    self.props.searchForMovie(searchQuery);
+  },
+
+  render () {
+    var self = this;
+    return (
+      <div className='ui fluid icon input'>
+        <input
+          type='text'
+          placeholder='Search for a movie'
+          onChange={self.searchInputChange}
+        />
+        <i className='search icon'></i>
+      </div>
+    );
+  }
+});
+
+/*
+ * React Component that manages states and lays out the UI structure
+ */
 var Page = React.createClass({
   getInitialState () {
     return {
-      displayGeoJSON : [],
+      displayMovieData : [],
       movieData : [],
       yearRange : [1915, 2015]
     };
   },
-  setYearRange (startYear, endYear) {
-    var self = this;
-    var cache = {};
-    geoJson = [];
-    movieGeoJSON = _.cloneDeep(self.state.movieData);
-    movieGeoJSON.forEach(function(movie) {
-      if (movie.year > endYear || movie.year < startYear) {
-        return;
-      }
-      for (var i = 0; i < movie.locations.length; i++) {
-        if (movie.locations[i]['real address'] in cache) {
-          continue;
-        }
-        var geoObj = {
-          'type': 'Feature',
-          'geometry': {
-            'type': 'Point',
-            'coordinates': [movie.locations[i]['lng'], movie.locations[i]['lat']],
-          },
-          'properties': {
-            'marker-color' : '#3bb2d0',
-            'marker-size' : 'small'
-          }
-        };
-        geoJson.push(geoObj);
-        cache[movie.locations[i]['real address']] = 1;
-      }
-    });
 
-    self.setState({
-      displayGeoJSON: geoJson,
-      yearRange: [startYear, endYear]
-    });
-  },
   componentDidMount () {
     var self = this;
     $.getJSON('movie_geo_data.json').done(function(movieData) {
-      var cache = {};
-      geoJson = [];
-      movieGeoJSON = movieData;
-      console.log(movieData);
-      movieGeoJSON.forEach(function(movie) {
-        for (var i = 0; i < movie.locations.length; i++) {
-          if (movie.locations[i]['real address'] in cache) {
-            continue;
-          }
-          var geoObj = {
-            'type': 'Feature',
-            'geometry': {
-              'type': 'Point',
-              'coordinates': [movie.locations[i]['lng'], movie.locations[i]['lat']],
-            },
-            'properties': {
-              'marker-color' : '#3bb2d0',
-              'marker-size' : 'small'
-            }
-          };
-          geoJson.push(geoObj);
-          cache[movie.locations[i]['real address']] = 1;
-        }
-
-      });
       self.setState({
-        displayGeoJSON : geoJson,
+        displayMovieData : movieData,
         movieData : movieData
       });
     }).fail(function() {
@@ -164,10 +143,74 @@ var Page = React.createClass({
     });
   },
 
+  setYearRange (startYear, endYear) {
+    var self = this;
+    self.setState({
+      yearRange: [startYear, endYear]
+    });
+  },
+
+  searchForMovie (query) {
+    var self = this;
+    var movieTmp = _.cloneDeep(self.state.movieData);
+    var movieList = [];
+    movieTmp.forEach(function(movieItem) {
+      if (
+        movieItem.year < self.state.yearRange[0] ||
+        movieItem.year > self.state.yearRange[1]
+      ) {
+        return;
+      }
+
+      if (movieItem.title.toLowerCase().includes(query.toLowerCase())) {
+        movieList.push(movieItem);
+      }
+    });
+
+    self.setState({
+      displayMovieData : movieList
+    });
+  },
+
+  makeGeoObj (lat, lng) {
+    return {
+      'type': 'Feature',
+      'geometry' : {
+        'image' : 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Cherry_Blossoms_and_Washington_Monument.jpg/320px-Cherry_Blossoms_and_Washington_Monument.jpg',
+        'type' : 'Point',
+        'coordinates' : [lng, lat],
+      },
+      'properties' : {
+        'marker-color' : '#3bb2d0',
+        'marker-size' : 'small'
+      }
+    }
+  },
+
   render () {
     var self = this;
-    var yearRange = self.state.yearRange;
-    
+    var startYear = self.state.yearRange[0];
+    var endYear = self.state.yearRange[1];
+
+    var cache = {};
+    var geoJson = [];
+    var movieTmp = _.cloneDeep(self.state.displayMovieData);
+    var movieList = [];
+    movieTmp.forEach(function(movie) {
+      if (movie.year > endYear || movie.year < startYear) {
+        return;
+      }
+      movieList.push(movie);
+      for (var i = 0; i < movie.locations.length; i++) {
+        if (movie.locations[i]['real address'] in cache) {
+          continue;
+        }
+        var geoObj = self.makeGeoObj(movie.locations[i].lat, movie.locations[i].lng);
+        geoJson.push(geoObj);
+        cache[movie.locations[i]['real address']] = 1;
+      }
+    });
+
     return (
       <div className='ui grid'>
         <div className='ui row'>
@@ -193,34 +236,37 @@ var Page = React.createClass({
             <div className={classNames('ui row', 'MC-YearSlider')}>
               <YearSlider setYearRange={self.setYearRange}/>
             </div>
+          </div>
+        </div>
 
-            <div className='ui row'>
-              <div className='nine wide column'>
-                <h3 className='ui blue header'>
-                  From {yearRange[0]} to {yearRange[1]}, the following locations in San Francisco had movie filming events:
-                </h3>
-              </div>
-            </div>
-
-            <div className='ui row'>
-              <MapView geoJSON={this.state.displayGeoJSON}/>
-            </div>
+        <div className='ui row'>
+          <div className='one wide column'>
+          </div>
+          <div className='nine wide column'>
+            <h3 className='ui blue header'>
+              From {startYear} to {endYear}, the following locations in San Francisco had movie filming events
+            </h3>
           </div>
           <div className='four wide column'>
-            <div className='ui row'>
-              <div className='four wide column'>
-                <div className='ui fluid icon input'>
-                  <input type='text' placeholder='Search for a movie' />
-                  <i className='search icon'></i>
-                </div>
-              </div>
-            </div>
+            <SearchBar
+              searchForMovie={self.searchForMovie}
+            />
+          </div>
+        </div>
+
+        <div className='ui row'>
+          <div className='one wide column'>
+          </div>
+          <div className='nine wide column'>
+            <MapView geoJSON={geoJson}/>
+          </div>
+          <div className='four wide column'>
+            <MovieList movieList={movieList} />
           </div>
         </div>
       </div>
     );
   }
 });
-
 
 React.render(<Page />, document.getElementById('app'));

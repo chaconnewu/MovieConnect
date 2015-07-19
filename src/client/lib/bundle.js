@@ -44,9 +44,9 @@
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var React = __webpack_require__(1);
 	var $ = __webpack_require__(157);
 	var _ = __webpack_require__(158);
+	var React = __webpack_require__(1);
 	var classNames = __webpack_require__(160);
 
 	__webpack_require__(161);
@@ -123,86 +123,65 @@
 
 	  },
 	  render:function () {
+	    var self = this;
+	    var names = self.props.movieList.map(function(movie) {
+	      return movie.title;
+	    });
+	    names.sort();
+	    var nameList = names.map(function(movieTitle) {
+	      return React.createElement("div", null, movieTitle);
+	    });
 	    return (
-	      React.createElement("div", null
-
+	      React.createElement("div", {className: "MC-MovieList"}, 
+	        nameList
 	      )
 	    );
 	  }
 	});
 
+	var SearchBar = React.createClass({displayName: "SearchBar",
+	  propTypes : {
+	    searchForMovie : React.PropTypes.func.isRequired
+	  },
+
+	  searchInputChange:function (e) {
+	    var self = this;
+	    var searchQuery = e.target.value.trim();
+	    self.props.searchForMovie(searchQuery);
+	  },
+
+	  render:function () {
+	    var self = this;
+	    return (
+	      React.createElement("div", {className: "ui fluid icon input"}, 
+	        React.createElement("input", {
+	          type: "text", 
+	          placeholder: "Search for a movie", 
+	          onChange: self.searchInputChange}
+	        ), 
+	        React.createElement("i", {className: "search icon"})
+	      )
+	    );
+	  }
+	});
+
+	/*
+	 * React Component that manages states and lays out the UI structure
+	 */
 	var Page = React.createClass({displayName: "Page",
 	  getInitialState:function () {
 	    return {
-	      displayGeoJSON : [],
+	      displayMovieData : [],
 	      movieData : [],
 	      yearRange : [1915, 2015]
 	    };
 	  },
-	  setYearRange:function (startYear, endYear) {
-	    var self = this;
-	    var cache = {};
-	    geoJson = [];
-	    movieGeoJSON = _.cloneDeep(self.state.movieData);
-	    movieGeoJSON.forEach(function(movie) {
-	      if (movie.year > endYear || movie.year < startYear) {
-	        return;
-	      }
-	      for (var i = 0; i < movie.locations.length; i++) {
-	        if (movie.locations[i]['real address'] in cache) {
-	          continue;
-	        }
-	        var geoObj = {
-	          'type': 'Feature',
-	          'geometry': {
-	            'type': 'Point',
-	            'coordinates': [movie.locations[i]['lng'], movie.locations[i]['lat']],
-	          },
-	          'properties': {
-	            'marker-color' : '#3bb2d0',
-	            'marker-size' : 'small'
-	          }
-	        };
-	        geoJson.push(geoObj);
-	        cache[movie.locations[i]['real address']] = 1;
-	      }
-	    });
 
-	    self.setState({
-	      displayGeoJSON: geoJson,
-	      yearRange: [startYear, endYear]
-	    });
-	  },
 	  componentDidMount:function () {
 	    var self = this;
 	    $.getJSON('movie_geo_data.json').done(function(movieData) {
-	      var cache = {};
-	      geoJson = [];
-	      movieGeoJSON = movieData;
-	      console.log(movieData);
-	      movieGeoJSON.forEach(function(movie) {
-	        for (var i = 0; i < movie.locations.length; i++) {
-	          if (movie.locations[i]['real address'] in cache) {
-	            continue;
-	          }
-	          var geoObj = {
-	            'type': 'Feature',
-	            'geometry': {
-	              'type': 'Point',
-	              'coordinates': [movie.locations[i]['lng'], movie.locations[i]['lat']],
-	            },
-	            'properties': {
-	              'marker-color' : '#3bb2d0',
-	              'marker-size' : 'small'
-	            }
-	          };
-	          geoJson.push(geoObj);
-	          cache[movie.locations[i]['real address']] = 1;
-	        }
-
-	      });
 	      self.setState({
-	        displayGeoJSON : geoJson,
+	        displayMovieData : movieData,
 	        movieData : movieData
 	      });
 	    }).fail(function() {
@@ -210,10 +189,74 @@
 	    });
 	  },
 
+	  setYearRange:function (startYear, endYear) {
+	    var self = this;
+	    self.setState({
+	      yearRange: [startYear, endYear]
+	    });
+	  },
+
+	  searchForMovie:function (query) {
+	    var self = this;
+	    var movieTmp = _.cloneDeep(self.state.movieData);
+	    var movieList = [];
+	    movieTmp.forEach(function(movieItem) {
+	      if (
+	        movieItem.year < self.state.yearRange[0] ||
+	        movieItem.year > self.state.yearRange[1]
+	      ) {
+	        return;
+	      }
+
+	      if (movieItem.title.toLowerCase().includes(query.toLowerCase())) {
+	        movieList.push(movieItem);
+	      }
+	    });
+
+	    self.setState({
+	      displayMovieData : movieList
+	    });
+	  },
+
+	  makeGeoObj:function (lat, lng) {
+	    return {
+	      'type': 'Feature',
+	      'geometry' : {
+	        'image' : 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Cherry_Blossoms_and_Washington_Monument.jpg/320px-Cherry_Blossoms_and_Washington_Monument.jpg',
+	        'type' : 'Point',
+	        'coordinates' : [lng, lat],
+	      },
+	      'properties' : {
+	        'marker-color' : '#3bb2d0',
+	        'marker-size' : 'small'
+	      }
+	    }
+	  },
+
 	  render:function () {
 	    var self = this;
-	    var yearRange = self.state.yearRange;
-	    
+	    var startYear = self.state.yearRange[0];
+	    var endYear = self.state.yearRange[1];
+
+	    var cache = {};
+	    var geoJson = [];
+	    var movieTmp = _.cloneDeep(self.state.displayMovieData);
+	    var movieList = [];
+	    movieTmp.forEach(function(movie) {
+	      if (movie.year > endYear || movie.year < startYear) {
+	        return;
+	      }
+	      movieList.push(movie);
+	      for (var i = 0; i < movie.locations.length; i++) {
+	        if (movie.locations[i]['real address'] in cache) {
+	          continue;
+	        }
+	        var geoObj = self.makeGeoObj(movie.locations[i].lat, movie.locations[i].lng);
+	        geoJson.push(geoObj);
+	        cache[movie.locations[i]['real address']] = 1;
+	      }
+	    });
+
 	    return (
 	      React.createElement("div", {className: "ui grid"}, 
 	        React.createElement("div", {className: "ui row"}, 
@@ -238,36 +281,39 @@
 	          React.createElement("div", {className: "nine wide column"}, 
 	            React.createElement("div", {className: classNames('ui row', 'MC-YearSlider')}, 
 	              React.createElement(YearSlider, {setYearRange: self.setYearRange})
-	            ), 
+	            )
+	          )
+	        ), 
 
-	            React.createElement("div", {className: "ui row"}, 
-	              React.createElement("div", {className: "nine wide column"}, 
-	                React.createElement("h3", {className: "ui blue header"}, 
-	                  "From ", yearRange[0], " to ", yearRange[1], ", the following locations in San Francisco had movie filming events:"
-	                )
-	              )
-	            ), 
-
-	            React.createElement("div", {className: "ui row"}, 
-	              React.createElement(MapView, {geoJSON: this.state.displayGeoJSON})
+	        React.createElement("div", {className: "ui row"}, 
+	          React.createElement("div", {className: "one wide column"}
+	          ), 
+	          React.createElement("div", {className: "nine wide column"}, 
+	            React.createElement("h3", {className: "ui blue header"}, 
+	              "From ", startYear, " to ", endYear, ", the following locations in San Francisco had movie filming events"
 	            )
 	          ), 
 	          React.createElement("div", {className: "four wide column"}, 
-	            React.createElement("div", {className: "ui row"}, 
-	              React.createElement("div", {className: "four wide column"}, 
-	                React.createElement("div", {className: "ui fluid icon input"}, 
-	                  React.createElement("input", {type: "text", placeholder: "Search for a movie"}), 
-	                  React.createElement("i", {className: "search icon"})
-	                )
-	              )
+	            React.createElement(SearchBar, {
+	              searchForMovie: self.searchForMovie}
 	            )
+	          )
+	        ), 
+
+	        React.createElement("div", {className: "ui row"}, 
+	          React.createElement("div", {className: "one wide column"}
+	          ), 
+	          React.createElement("div", {className: "nine wide column"}, 
+	            React.createElement(MapView, {geoJSON: geoJson})
+	          ), 
+	          React.createElement("div", {className: "four wide column"}, 
+	            React.createElement(MovieList, {movieList: movieList})
 	          )
 	        )
 	      )
 	    );
 	  }
 	});
-
 
 	React.render(React.createElement(Page, null), document.getElementById('app'));
 
@@ -42327,7 +42373,7 @@
 
 
 	// module
-	exports.push([module.id, ".MC-YearSlider {\n  margin-bottom: 50px;\n}\n.MC-Map {\n  width: 100%;\n  height: 500px;\n}\n.MC-SearchBar {\n  width: 100%;\n}\n", ""]);
+	exports.push([module.id, ".MC-YearSlider {\n  margin-bottom: 50px;\n}\n.MC-Map {\n  width: 100%;\n  height: 500px;\n}\n.MC-SearchBar {\n  width: 100%;\n}\n.MC-MovieList {\n  height: 500px;\n  overflow-y: scroll;\n}\n", ""]);
 
 	// exports
 
