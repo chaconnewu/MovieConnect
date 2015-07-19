@@ -163,9 +163,14 @@
 
 	  render:function () {
 	    var self = this;
+	    var movieItem = self.props.movieItem;
+	    if (!movieItem) return React.createElement("div", null);
+	    console.log(movieItem);
 	    return (
-	      React.createElement("div", {className: "MC-MovieDetail"}
-
+	      React.createElement("div", {className: "MC-MovieDetail"}, 
+	        React.createElement("div", {className: "ui row"}, 
+	          React.createElement("h3", {className: "ui blue header"}, movieItem.title)
+	        )
 	      )
 	    );
 	  }

@@ -117,9 +117,14 @@ var MovieDetail = React.createClass({
 
   render () {
     var self = this;
+    var movieItem = self.props.movieItem;
+    if (!movieItem) return <div></div>;
+    console.log(movieItem);
     return (
       <div className='MC-MovieDetail'>
-
+        <div className='ui row'>
+          <h3 className='ui blue header'>{movieItem.title}</h3>
+        </div>
       </div>
     );
   }
