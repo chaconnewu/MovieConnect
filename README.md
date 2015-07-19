@@ -46,9 +46,9 @@ Movie detailed info displays some simple information of a selected movie.
 Reset button clears slider, SearchBar, and selection in MovieList.
 
 ## Known Issues
-### 1. StreetView doesn't hide after Reset
-### 2. For some locations, Google StreetView API does not return images
-### 3. StreetView cannot be reset
+1. StreetView doesn't hide after Reset
+2. For some locations, Google StreetView API does not return images
+3. StreetView cannot be reset
 
 ## Contact
 Please submit an issue request or contact me at chaconnewu AT gamil dot com if
