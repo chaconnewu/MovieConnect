@@ -47,8 +47,9 @@ var YearSlider = React.createClass({
 
 var Panorama = React.createClass({
   propTypes : {
-
+    coord : React.PropTypes.object.isRequired
   },
+
   componentWillReceiveProps (nextProps) {
     if (nextProps.coord) {
       var lat = parseFloat(nextProps.coord.lat);
@@ -74,6 +75,8 @@ var Panorama = React.createClass({
   }
 });
 
+
+
 var MapView = React.createClass({
   propTypes : {
     geoJSON : React.PropTypes.array.isRequired,
@@ -90,11 +93,7 @@ var MapView = React.createClass({
     if (self.markers) {
       self.map.removeLayer(self.markers);
     }
-    var geoJSONLayer = L.geoJson(nextProps.geoJSON, {
-      onEachFeature : function(feature, layer) {
-        layer.bindPopup('<div>hello</div>');
-      }
-    });
+    var geoJSONLayer = L.geoJson(nextProps.geoJSON);
     self.markers = new L.MarkerClusterGroup();
     self.markers.addLayer(geoJSONLayer);
     self.markers.on('click', function(d) {
@@ -111,23 +110,67 @@ var MapView = React.createClass({
   }
 });
 
-var MovieList = React.createClass({
+var MovieDetail = React.createClass({
   propTypes : {
-    movieList : React.PropTypes.array.isRequired
+    movieItem : React.PropTypes.object.isRequired
   },
 
   render () {
     var self = this;
-    var names = self.props.movieList.map(function(movie) {
-      return movie.title;
-    });
-    names.sort();
-    var nameList = names.map(function(movieTitle) {
-      return <div>{movieTitle}</div>;
+    return (
+      <div className='MC-MovieDetail'>
+
+      </div>
+    );
+  }
+});
+
+var MovieItem = React.createClass({
+  propTypes : {
+    index : React.PropTypes.number.isRequired,
+    movieItem : React.PropTypes.object.isRequired,
+    selectMovie : React.PropTypes.func.isRequired
+  },
+
+  itemClick () {
+    var self = this;
+    self.props.selectMovie(self.props.index);
+  },
+
+  render () {
+    var self = this;
+    return (
+      <div
+        className={self.props.movieItem.selected ?
+          'MC-MovieItem-selected' : 'MC-MovieItem'}
+        onClick={self.itemClick}
+      >
+        {self.props.movieItem.title}
+      </div>
+    );
+  }
+});
+
+var MovieList = React.createClass({
+  propTypes : {
+    movieList : React.PropTypes.array.isRequired,
+    selectMovie : React.PropTypes.func.isRequired
+  },
+
+  render () {
+    var self = this;
+    var movieList = self.props.movieList.map(function(movieItem, idx) {
+      return (
+        <MovieItem
+          movieItem={movieItem}
+          index={idx}
+          selectMovie={self.props.selectMovie}
+        />
+      );
     });
     return (
       <div className='MC-MovieList'>
-        {nameList}
+        {movieList}
       </div>
     );
   }
@@ -135,7 +178,8 @@ var MovieList = React.createClass({
 
 var SearchBar = React.createClass({
   propTypes : {
-    searchForMovie : React.PropTypes.func.isRequired
+    searchForMovie : React.PropTypes.func.isRequired,
+    yearRange : React.PropTypes.array.isRequired
   },
 
   searchInputChange (e) {
@@ -146,11 +190,15 @@ var SearchBar = React.createClass({
 
   render () {
     var self = this;
+    var startYear = self.props.yearRange[0];
+    var endYear = self.props.yearRange[1];
+    var placeholder = 'Find a movie between ' +
+      startYear + '~' + endYear;
     return (
       <div className='ui fluid icon input'>
         <input
           type='text'
-          placeholder='Search for a movie'
+          placeholder={placeholder}
           onChange={self.searchInputChange}
         />
         <i className='search icon'></i>
@@ -167,14 +215,26 @@ var Page = React.createClass({
     return {
       displayMovieData : [],
       movieData : [],
+      selectedMoive : null,
       streetViewCoord : null,
       yearRange : [1915, 2015]
     };
   },
 
+  comparator (a, b) {
+    if (a.title < b.title) return -1;
+    if (a.title > b.title) return 1;
+    return 0;
+  },
+
   componentDidMount () {
     var self = this;
     $.getJSON('movie_geo_data.json').done(function(movieData) {
+      movieData = movieData.map(function(movie) {
+        movie.selected = false;
+        return movie;
+      });
+      movieData = movieData.sort(self.comparator);
       self.setState({
         displayMovieData : movieData,
         movieData : movieData
@@ -188,6 +248,19 @@ var Page = React.createClass({
     var self = this;
     self.setState({
       yearRange: [startYear, endYear]
+    });
+  },
+
+  selectMovie (index) {
+    var self = this;
+    var movieData = self.state.displayMovieData.map(function(movie) {
+      movie.selected = false;
+      return movie;
+    });
+    movieData[index].selected = true;
+    self.setState({
+      displayMovieData : movieData,
+      selectedMovie : movieData[index]
     });
   },
 
@@ -220,12 +293,13 @@ var Page = React.createClass({
     });
   },
 
-  makeGeoObj (lat, lng) {
+  makeGeoObj (location) {
     return {
-      'type': 'Feature',
+      'type' : 'Feature',
+      'address' : location['real address'],
       'geometry' : {
         'type' : 'Point',
-        'coordinates' : [lng, lat],
+        'coordinates' : [location.lng, location.lat],
       },
       'properties' : {
         'marker-color' : '#3bb2d0',
@@ -251,7 +325,7 @@ var Page = React.createClass({
         if (movie.locations[i]['real address'] in cache) {
           continue;
         }
-        var geoObj = self.makeGeoObj(movie.locations[i].lat, movie.locations[i].lng);
+        var geoObj = self.makeGeoObj(movie.locations[i]);
         geoJson.push(geoObj);
         cache[movie.locations[i]['real address']] = 1;
       }
@@ -271,7 +345,7 @@ var Page = React.createClass({
           <div className='one wide column'>
           </div>
           <div className='ten wide column'>
-            <h4 class='ui header'>Movie Connect is a web application that allows you to explore the filming locations for the movies that were filmed in San Francisco, CA.</h4>
+            <h4 className='ui header'>Movie Connect is a web application that allows you to explore the filming locations for the movies that were filmed in San Francisco, CA.</h4>
           </div>
         </div>
 
@@ -296,6 +370,7 @@ var Page = React.createClass({
           <div className='four wide column'>
             <SearchBar
               searchForMovie={self.searchForMovie}
+              yearRange={self.state.yearRange}
             />
           </div>
         </div>
@@ -306,11 +381,14 @@ var Page = React.createClass({
           <div className='nine wide column'>
             <MapView
               geoJSON={geoJson}
-              setCoord = {self.setStreetViewCoord}
+              setCoord={self.setStreetViewCoord}
             />
           </div>
           <div className='four wide column'>
-            <MovieList movieList={movieList} />
+            <MovieList
+              movieList={movieList}
+              selectMovie={self.selectMovie}
+            />
           </div>
         </div>
 
@@ -319,7 +397,12 @@ var Page = React.createClass({
           </div>
           <div className='six wide column'>
             <Panorama
-              coord = {self.state.streetViewCoord}
+              coord={self.state.streetViewCoord}
+            />
+          </div>
+          <div className='six wide column'>
+            <MovieDetail
+              movieItem={self.state.selectedMovie}
             />
           </div>
         </div>

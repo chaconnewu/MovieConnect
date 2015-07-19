@@ -93,8 +93,9 @@
 
 	var Panorama = React.createClass({displayName: "Panorama",
 	  propTypes : {
-
+	    coord : React.PropTypes.object.isRequired
 	  },
+
 	  componentWillReceiveProps:function (nextProps) {
 	    if (nextProps.coord) {
 	      var lat = parseFloat(nextProps.coord.lat);
@@ -120,6 +121,8 @@
 	  }
 	});
 
+
+
 	var MapView = React.createClass({displayName: "MapView",
 	  propTypes : {
 	    geoJSON : React.PropTypes.array.isRequired,
@@ -136,11 +139,7 @@
 	    if (self.markers) {
 	      self.map.removeLayer(self.markers);
 	    }
-	    var geoJSONLayer = L.geoJson(nextProps.geoJSON, {
-	      onEachFeature : function(feature, layer) {
-	        layer.bindPopup('<div>hello</div>');
-	      }
-	    });
+	    var geoJSONLayer = L.geoJson(nextProps.geoJSON);
 	    self.markers = new L.MarkerClusterGroup();
 	    self.markers.addLayer(geoJSONLayer);
 	    self.markers.on('click', function(d) {
@@ -157,23 +156,67 @@
 	  }
 	});
 
-	var MovieList = React.createClass({displayName: "MovieList",
+	var MovieDetail = React.createClass({displayName: "MovieDetail",
 	  propTypes : {
-	    movieList : React.PropTypes.array.isRequired
+	    movieItem : React.PropTypes.object.isRequired
 	  },
 
 	  render:function () {
 	    var self = this;
-	    var names = self.props.movieList.map(function(movie) {
-	      return movie.title;
-	    });
-	    names.sort();
-	    var nameList = names.map(function(movieTitle) {
-	      return React.createElement("div", null, movieTitle);
+	    return (
+	      React.createElement("div", {className: "MC-MovieDetail"}
+
+	      )
+	    );
+	  }
+	});
+
+	var MovieItem = React.createClass({displayName: "MovieItem",
+	  propTypes : {
+	    index : React.PropTypes.number.isRequired,
+	    movieItem : React.PropTypes.object.isRequired,
+	    selectMovie : React.PropTypes.func.isRequired
+	  },
+
+	  itemClick:function () {
+	    var self = this;
+	    self.props.selectMovie(self.props.index);
+	  },
+
+	  render:function () {
+	    var self = this;
+	    return (
+	      React.createElement("div", {
+	        className: self.props.movieItem.selected ?
+	          'MC-MovieItem-selected' : 'MC-MovieItem', 
+	        onClick: self.itemClick
+	      }, 
+	        self.props.movieItem.title
+	      )
+	    );
+	  }
+	});
+
+	var MovieList = React.createClass({displayName: "MovieList",
+	  propTypes : {
+	    movieList : React.PropTypes.array.isRequired,
+	    selectMovie : React.PropTypes.func.isRequired
+	  },
+
+	  render:function () {
+	    var self = this;
+	    var movieList = self.props.movieList.map(function(movieItem, idx) {
+	      return (
+	        React.createElement(MovieItem, {
+	          movieItem: movieItem, 
+	          index: idx, 
+	          selectMovie: self.props.selectMovie}
+	        )
+	      );
 	    });
 	    return (
 	      React.createElement("div", {className: "MC-MovieList"}, 
-	        nameList
+	        movieList
 	      )
 	    );
 	  }
@@ -181,7 +224,8 @@
 
 	var SearchBar = React.createClass({displayName: "SearchBar",
 	  propTypes : {
-	    searchForMovie : React.PropTypes.func.isRequired
+	    searchForMovie : React.PropTypes.func.isRequired,
+	    yearRange : React.PropTypes.array.isRequired
 	  },
 
 	  searchInputChange:function (e) {
@@ -192,11 +236,15 @@
 
 	  render:function () {
 	    var self = this;
+	    var startYear = self.props.yearRange[0];
+	    var endYear = self.props.yearRange[1];
+	    var placeholder = 'Find a movie between ' +
+	      startYear + '~' + endYear;
 	    return (
 	      React.createElement("div", {className: "ui fluid icon input"}, 
 	        React.createElement("input", {
 	          type: "text", 
-	          placeholder: "Search for a movie", 
+	          placeholder: placeholder, 
 	          onChange: self.searchInputChange}
 	        ), 
 	        React.createElement("i", {className: "search icon"})
@@ -213,14 +261,26 @@
 	    return {
 	      displayMovieData : [],
 	      movieData : [],
+	      selectedMoive : null,
 	      streetViewCoord : null,
 	      yearRange : [1915, 2015]
 	    };
 	  },
 
+	  comparator:function (a, b) {
+	    if (a.title < b.title) return -1;
+	    if (a.title > b.title) return 1;
+	    return 0;
+	  },
+
 	  componentDidMount:function () {
 	    var self = this;
 	    $.getJSON('movie_geo_data.json').done(function(movieData) {
+	      movieData = movieData.map(function(movie) {
+	        movie.selected = false;
+	        return movie;
+	      });
+	      movieData = movieData.sort(self.comparator);
 	      self.setState({
 	        displayMovieData : movieData,
 	        movieData : movieData
@@ -234,6 +294,19 @@
 	    var self = this;
 	    self.setState({
 	      yearRange: [startYear, endYear]
+	    });
+	  },
+
+	  selectMovie:function (index) {
+	    var self = this;
+	    var movieData = self.state.displayMovieData.map(function(movie) {
+	      movie.selected = false;
+	      return movie;
+	    });
+	    movieData[index].selected = true;
+	    self.setState({
+	      displayMovieData : movieData,
+	      selectedMovie : movieData[index]
 	    });
 	  },
 
@@ -266,12 +339,13 @@
 	    });
 	  },
 
-	  makeGeoObj:function (lat, lng) {
+	  makeGeoObj:function (location) {
 	    return {
-	      'type': 'Feature',
+	      'type' : 'Feature',
+	      'address' : location['real address'],
 	      'geometry' : {
 	        'type' : 'Point',
-	        'coordinates' : [lng, lat],
+	        'coordinates' : [location.lng, location.lat],
 	      },
 	      'properties' : {
 	        'marker-color' : '#3bb2d0',
@@ -297,7 +371,7 @@
 	        if (movie.locations[i]['real address'] in cache) {
 	          continue;
 	        }
-	        var geoObj = self.makeGeoObj(movie.locations[i].lat, movie.locations[i].lng);
+	        var geoObj = self.makeGeoObj(movie.locations[i]);
 	        geoJson.push(geoObj);
 	        cache[movie.locations[i]['real address']] = 1;
 	      }
@@ -317,7 +391,7 @@
 	          React.createElement("div", {className: "one wide column"}
 	          ), 
 	          React.createElement("div", {className: "ten wide column"}, 
-	            React.createElement("h4", {class: "ui header"}, "Movie Connect is a web application that allows you to explore the filming locations for the movies that were filmed in San Francisco, CA.")
+	            React.createElement("h4", {className: "ui header"}, "Movie Connect is a web application that allows you to explore the filming locations for the movies that were filmed in San Francisco, CA.")
 	          )
 	        ), 
 
@@ -341,7 +415,8 @@
 	          ), 
 	          React.createElement("div", {className: "four wide column"}, 
 	            React.createElement(SearchBar, {
-	              searchForMovie: self.searchForMovie}
+	              searchForMovie: self.searchForMovie, 
+	              yearRange: self.state.yearRange}
 	            )
 	          )
 	        ), 
@@ -356,7 +431,10 @@
 	            )
 	          ), 
 	          React.createElement("div", {className: "four wide column"}, 
-	            React.createElement(MovieList, {movieList: movieList})
+	            React.createElement(MovieList, {
+	              movieList: movieList, 
+	              selectMovie: self.selectMovie}
+	            )
 	          )
 	        ), 
 
@@ -366,6 +444,11 @@
 	          React.createElement("div", {className: "six wide column"}, 
 	            React.createElement(Panorama, {
 	              coord: self.state.streetViewCoord}
+	            )
+	          ), 
+	          React.createElement("div", {className: "six wide column"}, 
+	            React.createElement(MovieDetail, {
+	              movieItem: self.state.selectedMovie}
 	            )
 	          )
 	        )
@@ -42432,7 +42515,7 @@
 
 
 	// module
-	exports.push([module.id, ".MC-YearSlider {\n  margin-bottom: 50px;\n}\n.MC-Map {\n  width: 100%;\n  height: 400px;\n}\n.MC-MovieList {\n  height: 400px;\n  overflow-y: scroll;\n}\n.MC-Panorama {\n  width: 100%;\n  height: 300px;\n}\n.MC-SearchBar {\n  width: 100%;\n}\n", ""]);
+	exports.push([module.id, ".MC-YearSlider {\n  margin-bottom: 50px;\n}\n.MC-Map {\n  width: 100%;\n  height: 400px;\n}\n.MC-MovieDetail {\n  height: 300px;\n}\n.MC-MovieItem {\n  cursor: pointer;\n}\n.MC-MovieItem:hover {\n  background-color: lightgrey;\n}\n.MC-MovieItem-selected {\n  background-color: lightgrey;\n}\n.MC-MovieList {\n  height: 400px;\n  overflow-y: scroll;\n}\n.MC-Panorama {\n  width: 100%;\n  height: 300px;\n}\n.MC-SearchBar {\n  width: 100%;\n}\n", ""]);
 
 	// exports
 

@@ -1,4 +1,5 @@
 @map-height: 400px;
+@detail-height: 300px;
 
 .MC {
   &-Header {
@@ -14,21 +15,35 @@
     height: @map-height;
   }
 
+  &-MovieDetail {
+    height: @detail-height;
+  }
+
+  &-MovieItem {
+    cursor: pointer;
+    &:hover {
+      background-color: lightgrey;
+    }
+    &-selected {
+      background-color: lightgrey;
+    }
+  }
+
   &-MovieList {
     height: @map-height;
     overflow-y: scroll;
+  }
+
+  &-Panorama {
+    width: 100%;
+    height: @detail-height;
   }
 
   &-Page {
 
   }
 
-  &-Panorama {
-    width: 100%;
-    height: 300px;
-  }
   &-SearchBar {
     width: 100%;
   }
-
 }
